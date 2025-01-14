@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>iCapture Check</title>
+    <style type="text/css">
+      html,
+      body {
+        height: 100vh;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #000;
+        background-color: #fff;
+      }
+
+      main {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .input {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+      }
+
+      .output {
+        flex-direction: column;
+      }
+
+      #output-data {
+        white-space: pre-wrap;
+        background: #333;
+        color: #ddd;
+        border-radius: 5px;
+        margin-top: 40px;
+        line-height: 22px;
+        font-weight: bold;
+        padding: 20px;
+      }
+
+      input {
+        min-width: 220px;
+        font-size: 38px;
+        padding: 20px;
+        text-align: center;
+        border: 1px solid #000;
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+      }
+
+      button {
+        font-size: 38px;
+        line-height: 38px;
+        background-color: #ddd;
+        border: 1px solid #000;
+        border-left: none;
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+        height: 88px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #000;
+      }
+
+      .has-toc {
+        font-size: 26px;
+      }
+
+      .info {
+        list-style-type: "- ";
+        padding: 15px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <div class="container">
+        <div class="input">
+          <input id="id-input" placeholder="HM000000" autofocus />
+          <button id="submit-button" type="button">⚡</button>
+        </div>
+        <div class="output">
+          <p id="output-msg"></p>
+          <details>
+            <summary>Response</summary>
+            <pre id="output-data">---</pre>
+          </details>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        check.init();
+      });
+
+      const check = {
+        url: "/?format=json&shelf_mark=",
+
+        init: function () {
+          this.msgBox = document.getElementById("output-msg");
+          this.dataBox = document.getElementById("output-data");
+          this.input = document.getElementById("id-input");
+          this.button = document.getElementById("submit-button");
+          this.registerInputListener();
+          this.registerButtonListener();
+        },
+
+        registerInputListener: function () {
+          this.input.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+              this.check();
+            }
+          });
+        },
+
+        registerButtonListener: function () {
+          this.button.addEventListener("click", async () => {
+            this.check();
+          });
+        },
+
+        check: async function () {
+          const shelfMark = this.input.value;
+          if (!shelfMark) {
+            return;
+          }
+          const url = this.url + shelfMark;
+          const response = await fetch(url);
+          const json = await response.json();
+          this.print(json);
+        },
+
+        print: function (json) {
+          this.printData(json);
+          this.printMsg(json);
+        },
+
+        printMsg: function (json) {
+          if (!json.success) {
+            this.msgBox.innerHTML = "ERROR!";
+            return;
+          }
+
+          let message = "";
+
+          if (json.duplicateInformation) {
+            message +=
+              `<p class="has-toc"> ✅ Inhaltsverzeichnis vorhanden: <br> <a target="_blank" href="${json.duplicateInformation}">${json.duplicateInformation}</a></p>`;
+          } else {
+            message +=
+              `<p class="has-toc"> ❌ Noch kein Inhaltsverzeichnis vorhanden.</p>`;
+          }
+
+          message += `<ul class="info">`;
+          message += `<li>Title: ${json.title}</li>`;
+          message += `<li>Author: ${json.author}</li>`;
+          message += `<li>ISBN: ${json.isbn}</li>`;
+          message += `<li>Barcode: ${json.shelf_mark}</li>`;
+          message += `<li>MMS ID: ${json.sys_nr}</li>`;
+          message += `<li>Language: ${json.language}</li>`;
+          message += `</ul>`;
+
+          this.msgBox.innerHTML = message;
+        },
+
+        printData: function (json) {
+          this.dataBox.innerText = JSON.stringify(json, null, 2);
+        },
+      };
+    </script>
+  </body>
+</html>
