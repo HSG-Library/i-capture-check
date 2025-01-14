@@ -1,11 +1,10 @@
 import { parse, stringify } from "https://deno.land/x/xml@6.0.4/mod.ts";
 
 import { BibResponse, ItemData, MarcData, Subfield } from "./Types.ts";
+import { BibDataProvider } from "./BibDataProvider.ts";
 
 export class DuplicateChecker {
-  private readonly apiUrl =
-    "https://api-eu.hosted.exlibrisgroup.com/almaws/v1/";
-
+  
   public constructor(private readonly apikey: string) {}
 
   public createXml(data: ItemData): string {
@@ -19,54 +18,14 @@ export class DuplicateChecker {
   }
 
   public async check(identifier: string): Promise<ItemData> {
-    const response: Response | null = identifier.startsWith("99")
-      ? await this.callApi(this.byMmsid, identifier)
-      : await this.callApi(this.byBarcode, identifier);
-    if (!response) {
-      return { success: false, shelf_mark: identifier };
-    }
-    const bibResponse: BibResponse = await response.json();
-    if (!bibResponse || this.checkForErrors(bibResponse)) {
-      return { success: false, shelf_mark: identifier };
-    }
+    const bibResponse: BibResponse = await new BibDataProvider(this.apikey)
+    .getBibData(identifier);
     const marcData: MarcData = this.extractMarc(bibResponse);
     return this.collectData(
       bibResponse,
       marcData,
       identifier.startsWith("99") ? null : identifier,
     );
-  }
-
-  private callApi(
-    by: (value: string) => Promise<Response | null>,
-    value: string,
-  ): Promise<Response | null> {
-    return by.bind(this)(value);
-  }
-
-  private async byBarcode(barcode: string): Promise<Response | null> {
-    const path = `items?item_barcode=${barcode}&format=json`;
-    const url = this.apiUrl + path;
-    console.info("calling:", url);
-    const response: Response = await fetch(url, {
-      headers: this.getHeaders(this.apikey),
-    });
-    const responseJson = await response.json();
-    const mmsid = responseJson?.bib_data?.mms_id;
-    if (!mmsid) {
-      return null;
-    }
-    return this.byMmsid(mmsid);
-  }
-
-  private byMmsid(mmsId: string): Promise<Response | null> {
-    const path = `bibs/${mmsId}?view=full&expand=None&format=json`;
-    const url = this.apiUrl + path;
-    console.info("calling:", url);
-    const response: Promise<Response | null> = fetch(url, {
-      headers: this.getHeaders(this.apikey),
-    });
-    return response;
   }
 
   private extractMarc(jsonResponse: BibResponse): MarcData {
@@ -170,16 +129,6 @@ export class DuplicateChecker {
       return d856$u;
     }
     return "";
-  }
-
-  private checkForErrors(bibResponse: BibResponse): boolean {
-    return bibResponse?.errorsExist ?? false;
-  }
-
-  private getHeaders(apikey: string): Headers {
-    return new Headers({
-      "Authorization": `apikey ${apikey}`,
-    });
   }
 
   private toSubfieldArray(subfield: unknown): Subfield[] {
