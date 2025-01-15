@@ -4,7 +4,6 @@ import { BibResponse, ItemData, MarcData, Subfield } from "./Types.ts";
 import { BibDataProvider } from "./BibDataProvider.ts";
 
 export class DuplicateChecker {
-  
   public constructor(private readonly apikey: string) {}
 
   public createXml(data: ItemData): string {
@@ -19,7 +18,7 @@ export class DuplicateChecker {
 
   public async check(identifier: string): Promise<ItemData> {
     const bibResponse: BibResponse = await new BibDataProvider(this.apikey)
-    .getBibData(identifier);
+      .getBibData(identifier);
     const marcData: MarcData = this.extractMarc(bibResponse);
     return this.collectData(
       bibResponse,
@@ -67,7 +66,8 @@ export class DuplicateChecker {
   }
 
   private extractAuthors(marcData: MarcData): string[] {
-    const author: string = this.toSubfieldArray(
+    const author: string = this.
+    toSubfieldArray(
       marcData.record.datafield.find((field) => field["@tag"] === "100")
         ?.subfield,
     )
@@ -77,8 +77,8 @@ export class DuplicateChecker {
       marcData.record.datafield.find((field) => field["@tag"] === "700")
         ?.subfield,
     )
-      .filter((subfield) => subfield["@code"] === "a")
-      .map((subfield) => subfield["#text"]);
+      .filter((subfield) => subfield && subfield["@code"] === "a")
+      .map((subfield) => subfield["#text"] ?? "");
 
     return [author, ...otherAuthors];
   }
@@ -89,9 +89,8 @@ export class DuplicateChecker {
         (dataFiled) => dataFiled.subfield,
       ),
     )
-      .filter((subfield) => subfield["@code"] === "a").map((subfield) =>
-        subfield["#text"]
-      );
+      .filter((subfield) => subfield && subfield["@code"] === "a")
+      .map((subfield) => subfield["#text"] ?? "");
 
     return isbn;
   }
@@ -104,31 +103,45 @@ export class DuplicateChecker {
   }
 
   private extractDuplicateInfo(marcData: MarcData): string {
-    const tocList = ["Inhaltsverzeichnis", "Table of contents", "Indice"];
-    //datafield tag="856" 	subfield code="3" 	enthält den Begriff 'Inhaltsverzeichnis' oder 'Table of contents' oder 'Indice'
-    const d856Subfield: Subfield[] = this.toSubfieldArray(
-      marcData.record.datafield.find((field) => field["@tag"] === "856")
-        ?.subfield,
-    );
-    const d856$3: string =
-      d856Subfield?.find((subfield) => subfield["@code"] === "3")?.["#text"] ??
-        "";
-    const hasToc856$3: boolean = tocList.includes(d856$3);
-    //datafield tag = "856" 	subfield code = "z" 	enthält den Begriff 'Inhaltsverzeichnis' oder 'Table of contents' oder 'Indice'
-    const d856$z: string =
-      d856Subfield?.find((subfield) => subfield["@code"] === "z")?.["#text"] ??
-        "";
-    const hasToc856$z: boolean = tocList.includes(d856$z);
-
-    if (hasToc856$3 || hasToc856$z) {
-      //datafield tag="856" 	subfield code="u" 	Inhalt anzeigen (URL zum anklicken)
-      const d856$u: string = d856Subfield?.find((subfield) =>
-        subfield["@code"] === "u"
-      )?.["#text"] ??
-        "";
-      return d856$u;
+    const tocList = [
+      "Inhaltsverzeichnis",
+      "Table of contents",
+      "Indice",
+      "Table des matières",
+      "Indice dei contenuti",
+    ];
+    const d856:string = marcData.record.datafield.filter((field) => field && field["@tag"] === "856")
+      .flatMap((field) => this.toSubfieldArray(field.subfield))
+      .map((subfield) => subfield["#text"] ?? "")
+      .join(" ");
+      
+    const hasToc856: boolean = tocList.some((toc) => d856.toLowerCase().includes(toc.toLowerCase()));
+    
+    if(hasToc856) {
+      return d856;
     }
-    return "";
+
+    return "".trim();
+
+    //datafield tag="856" 	subfield code="3" 	enthält den Begriff 'Inhaltsverzeichnis' oder 'Table of contents' oder 'Indice'
+    // const urls: string[] = marcData.record.datafield.filter((field) => field["@tag"] === "856")
+    //   .map((field) => {
+    //     const isToc: boolean = this.toSubfieldArray(field.subfield)
+    //       .filter((subfield) =>
+    //         subfield["@code"] === "3" || subfield["@code"] === "z"
+    //       )
+    //       .some((subfield) => {
+    //         return tocList.some((toc) =>
+    //           subfield["#text"].toLowerCase().includes(toc.toLowerCase())
+    //         );
+    //       });
+    //     if (isToc) {
+    //       return this.toSubfieldArray(field.subfield).find((subfield) => subfield["@code"] === "u")?.["#text"] ?? "";
+    //     }
+    //     return "";
+    //   });
+     
+    // return urls.join(" ").trim();  
   }
 
   private toSubfieldArray(subfield: unknown): Subfield[] {
