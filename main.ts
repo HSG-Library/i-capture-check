@@ -2,7 +2,7 @@ import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 import { DuplicateChecker } from "./DuplicateChecker.ts";
 
 if (import.meta.main) {
-  const apikey: string = Deno.args[0];
+  const apikey = await Deno.readTextFile("apikey").then((text) => text.trim());
 
   if (!apikey) {
     throw Error(
