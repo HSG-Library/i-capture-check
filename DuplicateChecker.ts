@@ -49,9 +49,9 @@ export class DuplicateChecker {
       success: true,
       shelf_mark: shelfMark,
       sys_nr: sysNr,
-      isbn: isbn,
-      author: author,
       title: title,
+      author: author,
+      isbn: isbn,
       language: language,
     };
 
@@ -66,11 +66,11 @@ export class DuplicateChecker {
   }
 
   private extractAuthors(marcData: MarcData): string[] {
-    const author: string = this.
-    toSubfieldArray(
-      marcData.record.datafield.find((field) => field["@tag"] === "100")
-        ?.subfield,
-    )
+    const author: string = this
+      .toSubfieldArray(
+        marcData.record.datafield.find((field) => field["@tag"] === "100")
+          ?.subfield,
+      )
       .find((subfield) => subfield["@code"] === "a")?.["#text"] ?? "";
 
     const otherAuthors: string[] = this.toSubfieldArray(
@@ -84,13 +84,15 @@ export class DuplicateChecker {
   }
 
   private extractIsbn(marcData: MarcData): string[] {
-    const isbn: string[] = this.toSubfieldArray(
-      marcData.record.datafield.filter((field) => field["@tag"] === "020").map(
-        (dataFiled) => dataFiled.subfield,
-      ),
-    )
-      .filter((subfield) => subfield && subfield["@code"] === "a")
-      .map((subfield) => subfield["#text"] ?? "");
+    const isbn: string[] = this
+      .toSubfieldArray(
+        marcData.record.datafield.filter((field) => field["@tag"] === "020")
+          .flatMap(
+            (dataField) => dataField.subfield,
+          ),
+      ).filter((subfield) => subfield && subfield["@code"] === "a").map((
+        subfield,
+      ) => subfield["#text"] ?? "");
 
     return isbn;
   }
@@ -110,18 +112,22 @@ export class DuplicateChecker {
       "Table des matières",
       "Indice dei contenuti",
     ];
-    const d856:string = marcData.record.datafield.filter((field) => field && field["@tag"] === "856")
+    const d856: string = marcData.record.datafield.filter((field) =>
+      field && field["@tag"] === "856"
+    )
       .flatMap((field) => this.toSubfieldArray(field.subfield))
       .map((subfield) => subfield["#text"] ?? "")
       .join(" ");
-      
-    const hasToc856: boolean = tocList.some((toc) => d856.toLowerCase().includes(toc.toLowerCase()));
-    
-    if(hasToc856) {
-      return d856;
+
+    const hasToc856: boolean = tocList.some((toc) =>
+      d856.toLowerCase().includes(toc.toLowerCase())
+    );
+
+    if (hasToc856) {
+      return d856.trim();
     }
 
-    return "".trim();
+    return "";
 
     //datafield tag="856" 	subfield code="3" 	enthält den Begriff 'Inhaltsverzeichnis' oder 'Table of contents' oder 'Indice'
     // const urls: string[] = marcData.record.datafield.filter((field) => field["@tag"] === "856")
@@ -140,8 +146,8 @@ export class DuplicateChecker {
     //     }
     //     return "";
     //   });
-     
-    // return urls.join(" ").trim();  
+
+    // return urls.join(" ").trim();
   }
 
   private toSubfieldArray(subfield: unknown): Subfield[] {
