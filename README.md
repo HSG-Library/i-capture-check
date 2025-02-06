@@ -59,8 +59,14 @@ Resultat:
 2. Damit Anfragen an die Alma API gemacht werden können, muss eine Datei mit
    Namen `apikey` mit einem gültigen API-Key als einzigen Ihnalt im Ordner
    abgelegt werden.
-3. Der Server kann über die Datei `run.cmd` gestartet werden
+3. Der Server kann über die Datei `run-in-background.cmd` gestartet werden
 4. Anleitung für Konfiguration in iCapture:
    https://teamspace.unisg.ch/verw/bi/wiki/Seiten/iCapture%20technische%20Dokumentation.aspx
 5. Abfrage mit XML resultat: http://localhost:3000/?shelf_mark=[barcode]
-6. Abfrage via Interface http://0.0.0.0:3000
+6. Abfrage via Interface http://localhost:3000
+
+## Beispiele
+
+**Barcode:** http://localhost:3000/?shelf_mark=HM00673469 **MMSID aus IZ:**
+http://localhost:3000/?shelf_mark=9911105508105506 **MMSID aus NZ:**
+http://localhost:3000/?shelf_mark=991171868027605501

@@ -53,9 +53,9 @@ export interface SRUResponse {
     numberOfRecords: string;
     diagnostics?: unknown;
     records?: {
-      record: {
-        recordIdentifier: string;
-        recordData: MarcData;
+      record?: {
+        recordIdentifier?: string;
+        recordData?: MarcData;
       };
     };
   };

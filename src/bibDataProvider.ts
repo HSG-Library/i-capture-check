@@ -10,68 +10,59 @@ export class BibDataProvider {
   public constructor(private readonly apikey: string) {}
 
   public async getBibData(identifier: string): Promise<BibData> {
-    const response: Response | null = identifier.startsWith("99")
-      ? await this.callApi(this.byMmsid, identifier)
-      : await this.callApi(this.byBarcode, identifier);
+    const response: Response = this.isMmsId(identifier)
+      ? await this.call(this.byMmsid, identifier)
+      : await this.call(this.byBarcode, identifier);
 
     if (!response) {
-      return Promise.reject({
-        errorsExist: true,
-        errorList: {
-          error: [{ errorMessage: "Invalid barcode or no response" }],
-        },
-      });
+      return Promise.reject(this.createError("Invalid barcode or no response"));
     }
+
     const bibData: BibData = await this.convertToBibData(response);
+
     if (this.checkForErrors(bibData)) {
       return Promise.reject(bibData);
     }
     return Promise.resolve(bibData);
   }
 
-  private callApi(
-    by: (value: string) => Promise<Response | null>,
+  private call(
+    by: (value: string) => Promise<Response>,
     value: string,
-  ): Promise<Response | null> {
+  ): Promise<Response> {
     return by.bind(this)(value);
   }
 
-  private async byBarcode(barcode: string): Promise<Response | null> {
+  private async byBarcode(barcode: string): Promise<Response> {
     const path = `items?item_barcode=${barcode}&format=json`;
     const url = this.apiUrl + path;
-    console.info("calling (API):", url);
-    const response: Response = await fetch(url, {
-      headers: this.getHeaders(this.apikey),
-    });
+    const response: Response = await this.callApi(url);
     const responseJson = await response.json();
     const mmsid = responseJson?.bib_data?.mms_id;
     if (!mmsid) {
-      return null;
+      return Promise.reject();
     }
     return this.byMmsid(mmsid);
   }
 
-  private byMmsid(mmsId: string): Promise<Response | null> {
-    if (mmsId.endsWith("5506")) {
+  private byMmsid(mmsId: string): Promise<Response> {
+    if (this.isIzMmsId(mmsId)) {
       return this.byIZMmsidViaApi(mmsId);
     }
     return this.byNZMmsidViaSRU(mmsId);
   }
 
-  private byIZMmsidViaApi(mmsId: string): Promise<Response | null> {
+  private byIZMmsidViaApi(mmsId: string): Promise<Response> {
     const path = `bibs/${mmsId}?view=full&expand=None&format=json`;
     const url = this.apiUrl + path;
-    console.info("calling (API):", url);
-    const response: Promise<Response | null> = fetch(url, {
-      headers: this.getHeaders(this.apikey),
-    });
+    const response: Promise<Response> = this.callApi(url);
     return response;
   }
 
-  private byNZMmsidViaSRU(mmsId: string): Promise<Response | null> {
+  private byNZMmsidViaSRU(mmsId: string): Promise<Response> {
     const url = this.sruUrl + mmsId;
     console.info("calling (SRU):", url);
-    const response: Promise<Response | null> = fetch(url);
+    const response: Promise<Response> = fetch(url);
     return response;
   }
 
@@ -87,7 +78,7 @@ export class BibDataProvider {
 
   private async convertToBibData(response: Response): Promise<BibData> {
     const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("json")) {
+    if (this.isApiResponse(contentType)) {
       const json = await response.json();
       if (json?.errorsExist) {
         return {
@@ -100,41 +91,61 @@ export class BibDataProvider {
         marcData: this.extractMarc(json?.anies?.[0] ?? ""),
         errorsExist: json?.errorsExist,
       };
-    } else if (contentType && contentType.includes("xml")) {
+    } else if (this.isSruResponse(contentType)) {
       const xml = await response.text();
       const sruResponse: SRUResponse = parse(xml) as unknown as SRUResponse;
       if (sruResponse?.searchRetrieveResponse?.diagnostics) {
-        return {
-          errorsExist: true,
-          errorList: {
-            error: [
-              {
-                errorMessage: "SRU query error",
-              },
-            ],
-          },
-        };
+        return this.createError("SRU query error");
       }
-      if (sruResponse?.searchRetrieveResponse?.numberOfRecords === "1") {
-        const record = sruResponse?.searchRetrieveResponse?.records?.record
+      const sru = sruResponse?.searchRetrieveResponse;
+      if (sru?.numberOfRecords === "1") {
+        const record = sru?.records?.record
           ?.recordData;
         return {
-          mms_id: sruResponse?.searchRetrieveResponse?.records?.record
-            ?.recordIdentifier,
+          mms_id: sru?.records?.record?.recordIdentifier,
           marcData: record,
           errorsExist: false,
         };
       }
-      return {
-        mms_id: "",
-        errorsExist: true,
-      };
+      return this.createError("Invalid SRU response");
     } else {
       throw new Error("Unsupported content type: " + contentType);
     }
   }
 
+  private async callApi(apiUrl: string): Promise<Response> {
+    console.info("calling (API):", apiUrl);
+    return await fetch(apiUrl, {
+      headers: this.getHeaders(this.apikey),
+    });
+  }
+
+  private isMmsId(identifier: string) {
+    return identifier.startsWith("99");
+  }
+
+  private isIzMmsId(mmsId: string) {
+    return mmsId.endsWith("5506");
+  }
+
+  private isApiResponse(contentType: string | null) {
+    return contentType && contentType.includes("json");
+  }
+
+  private isSruResponse(contentType: string | null) {
+    return contentType && contentType.includes("xml");
+  }
+
   private extractMarc(xmlString: string): MarcData {
     return parse(xmlString) as unknown as MarcData;
+  }
+
+  private createError(errorMsg: string): BibData {
+    return {
+      errorsExist: true,
+      errorList: {
+        error: [{ errorMessage: errorMsg }],
+      },
+    };
   }
 }
