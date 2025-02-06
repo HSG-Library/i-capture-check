@@ -1,7 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.203.0/assert/assert_equals.ts";
+import { parse } from "https://deno.land/x/xml@6.0.4/mod.ts";
 import { DuplicateChecker } from "../src/duplicateChecker.ts";
 import { BibDataProvider } from "../src/bibDataProvider.ts";
-import { BibResponse, ItemData } from "../src/types.ts";
+import { BibData, ItemData, MarcData } from "../src/types.ts";
 import { stub } from "jsr:@std/testing/mock";
 
 Deno.test("One author, one isbn", async () => {
@@ -11,12 +12,9 @@ Deno.test("One author, one isbn", async () => {
   stub(
     bibDataProviderStub,
     "getBibData",
-    (identifier: string) => (Promise.resolve<BibResponse>({
+    (identifier: string) => (Promise.resolve<BibData>({
       mms_id: identifier,
-      isbn: "mock_isbn",
-      author: "mock_author",
-      title: "mock_title",
-      anies: [
+      marcData: parse(
         `
 				<record>
 					<leader>01462nam a2200445 c 4500</leader>
@@ -32,9 +30,12 @@ Deno.test("One author, one isbn", async () => {
 						<subfield code="0">(DE-588)115454926</subfield>
 						<subfield code="4">aut</subfield>
 					</datafield>
+          <datafield ind1="1" ind2=" " tag="245">
+						<subfield code="a">This is the title</subfield>
+					</datafield>
 				</record>	
 				`,
-      ],
+      ) as unknown as MarcData,
       errorsExist: false,
     })),
   );
@@ -45,7 +46,7 @@ Deno.test("One author, one isbn", async () => {
 
   assertEquals(result.success, true);
   assertEquals(result.sys_nr, "mock_identifier");
-  assertEquals(result.title, "mock_title");
+  assertEquals(result.title, "This is the title");
   assertEquals(result.author, [
     "Nida-Rümelin, Julian",
   ]);
@@ -62,12 +63,9 @@ Deno.test("Two authors, two isbns", async () => {
   stub(
     bibDataProviderStub,
     "getBibData",
-    (identifier: string) => (Promise.resolve<BibResponse>({
+    (identifier: string) => (Promise.resolve<BibData>({
       mms_id: identifier,
-      isbn: "mock_isbn",
-      author: "mock_author",
-      title: "mock_title",
-      anies: [
+      marcData: parse(
         `
 				<record>
 					<leader>01462nam a2200445 c 4500</leader>
@@ -94,9 +92,12 @@ Deno.test("Two authors, two isbns", async () => {
 						<subfield code="e">Übersetzer</subfield>
 						<subfield code="4">trl</subfield>
 					</datafield>
+          <datafield ind1="1" ind2=" " tag="245">
+						<subfield code="a">This is the title</subfield>
+					</datafield>
 				</record>	
 				`,
-      ],
+      ) as unknown as MarcData,
       errorsExist: false,
     })),
   );
@@ -107,7 +108,7 @@ Deno.test("Two authors, two isbns", async () => {
 
   assertEquals(result.success, true);
   assertEquals(result.sys_nr, "mock_identifier");
-  assertEquals(result.title, "mock_title");
+  assertEquals(result.title, "This is the title");
   assertEquals(result.author, [
     "Nida-Rümelin, Julian",
     "Hack, Michael",
@@ -126,12 +127,9 @@ Deno.test("No authors, no isbns", async () => {
   stub(
     bibDataProviderStub,
     "getBibData",
-    (identifier: string) => (Promise.resolve<BibResponse>({
+    (identifier: string) => (Promise.resolve<BibData>({
       mms_id: identifier,
-      isbn: "mock_isbn",
-      author: "mock_author",
-      title: "mock_title",
-      anies: [
+      marcData: parse(
         `
 				<record>
 					<leader>01462nam a2200445 c 4500</leader>
@@ -143,7 +141,7 @@ Deno.test("No authors, no isbns", async () => {
 					</datafield>
 				</record>	
 				`,
-      ],
+      ) as unknown as MarcData,
       errorsExist: false,
     })),
   );
@@ -154,7 +152,7 @@ Deno.test("No authors, no isbns", async () => {
 
   assertEquals(result.success, true);
   assertEquals(result.sys_nr, "mock_identifier");
-  assertEquals(result.title, "mock_title");
+  assertEquals(result.title, "");
   assertEquals(result.author, []);
   assertEquals(result.isbn, []);
   assertEquals(result.language, "ger");

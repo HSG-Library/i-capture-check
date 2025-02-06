@@ -1,10 +1,15 @@
-export interface BibResponse {
+export interface BibData {
   mms_id?: string;
-  isbn?: string;
-  author?: string;
-  title?: string;
-  anies?: string[];
+  marcData?: MarcData;
   errorsExist?: boolean;
+  errorList?: {
+    error?: [
+      {
+        errorCode?: string;
+        errorMessage?: string;
+      },
+    ];
+  };
 }
 
 export interface MarcData {
@@ -41,4 +46,17 @@ export interface ItemData {
   title?: string;
   language?: string;
   duplicateInformation?: string;
+}
+
+export interface SRUResponse {
+  searchRetrieveResponse: {
+    numberOfRecords: string;
+    diagnostics?: unknown;
+    records?: {
+      record: {
+        recordIdentifier: string;
+        recordData: MarcData;
+      };
+    };
+  };
 }

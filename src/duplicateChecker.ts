@@ -1,12 +1,6 @@
-import { parse, stringify } from "https://deno.land/x/xml@6.0.4/mod.ts";
+import { stringify } from "https://deno.land/x/xml@6.0.4/mod.ts";
 
-import {
-  BibResponse,
-  Datafield,
-  ItemData,
-  MarcData,
-  Subfield,
-} from "./types.ts";
+import { BibData, Datafield, ItemData, MarcData, Subfield } from "./types.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
 export class DuplicateChecker {
@@ -23,33 +17,34 @@ export class DuplicateChecker {
   }
 
   public async check(identifier: string): Promise<ItemData> {
-    const bibResponse: BibResponse = await this.bibDataProvider
-      .getBibData(identifier);
-    const marcData: MarcData = this.extractMarc(bibResponse);
-    return this.collectData(
-      bibResponse,
-      marcData,
-      identifier.startsWith("99") ? null : identifier,
-    );
-  }
-
-  private extractMarc(jsonResponse: BibResponse): MarcData {
-    const marcXml: string = jsonResponse?.anies?.[0] ?? "";
-    return parse(marcXml) as unknown as MarcData;
+    try {
+      const bibData: BibData = await this.bibDataProvider
+        .getBibData(identifier);
+      console.log(bibData);
+      return this.collectData(
+        bibData,
+        identifier.startsWith("99") ? null : identifier,
+      );
+    } catch (error) {
+      console.log(error);
+      return error as ItemData;
+    }
   }
 
   private collectData(
-    bibResponse: BibResponse,
-    marcData: MarcData,
+    bibData: BibData,
     barcode: string | null,
   ): ItemData {
+    if (!bibData?.marcData) {
+      throw Error("No MarcData available");
+    }
     const shelfMark = barcode;
-    const sysNr = bibResponse?.mms_id;
-    const isbn = this.extractIsbn(marcData);
-    const author = this.extractAuthors(marcData);
-    const title = bibResponse?.title;
-    const language = this.exctractLanguage(marcData);
-    const duplicateInformation = this.extractDuplicateInfo(marcData);
+    const sysNr = bibData?.mms_id;
+    const isbn = this.extractIsbn(bibData.marcData);
+    const author = this.extractAuthors(bibData.marcData);
+    const title = this.extractTitle(bibData.marcData);
+    const language = this.exctractLanguage(bibData.marcData);
+    const duplicateInformation = this.extractDuplicateInfo(bibData.marcData);
 
     let itemData: ItemData = {
       success: true,
@@ -69,6 +64,19 @@ export class DuplicateChecker {
     }
 
     return itemData;
+  }
+
+  private extractTitle(marcData: MarcData): string {
+    const title: string = this
+      .toArray<Subfield>(
+        this.toArray<Datafield>(marcData.record.datafield).find((field) =>
+          field["@tag"] === "245"
+        )
+          ?.subfield,
+      )
+      .find((subfield) => subfield && subfield["@code"] === "a")?.["#text"] ??
+      "";
+    return title;
   }
 
   private extractAuthors(marcData: MarcData): string[] {
