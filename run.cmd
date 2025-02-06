@@ -16,6 +16,6 @@ if not exist "%DENO_PATH%" (
 )      
 
 :: Run the Deno script, passing the dropped file path as an argument
-"%DENO_PATH%" run --allow-import --allow-net --allow-read .\main.ts"
+"%DENO_PATH%" run --allow-import --allow-net --allow-read .\src\main.ts"
 
 pause

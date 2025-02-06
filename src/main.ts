@@ -1,5 +1,6 @@
 import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
-import { DuplicateChecker } from "./DuplicateChecker.ts";
+import { DuplicateChecker } from "./duplicateChecker.ts";
+import { BibDataProvider } from "./bibDataProvider.ts";
 
 if (import.meta.main) {
   const apikey = await Deno.readTextFile("apikey").then((text) => text.trim());
@@ -22,7 +23,8 @@ if (import.meta.main) {
       return;
     }
 
-    const iCaptureCheck = new DuplicateChecker(apikey);
+    const bibDataProvider = new BibDataProvider(apikey);
+    const iCaptureCheck = new DuplicateChecker(bibDataProvider);
     const resultJson = await iCaptureCheck.check(shelfMark);
 
     if (format === "json") {
@@ -36,11 +38,14 @@ if (import.meta.main) {
     return;
   });
 
-  app.addEventListener("listen", ({ hostname, port }) => {
-    console.log(
-      `Server started on http://${hostname ?? "localhost"}:${port}`,
-    );
-  });
+  app.addEventListener(
+    "listen",
+    ({ hostname, port }: { hostname: string; port: number }) => {
+      console.log(
+        `Server started on http://${hostname ?? "localhost"}:${port}`,
+      );
+    },
+  );
 
   await app.listen({ port: 3000 });
 }

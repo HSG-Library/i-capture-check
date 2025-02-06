@@ -10,17 +10,21 @@ export interface BibResponse {
 export interface MarcData {
   record: {
     leader: string;
-    controlfield: {
-      "#text": string;
-      "@tag": string;
-    }[];
-    datafield: {
-      "@ind1": string;
-      "@ind2": string;
-      "@tag": string;
-      subfield: Subfield | Subfield[];
-    }[];
+    controlfield: Controlfield[];
+    datafield: Datafield[];
   };
+}
+
+export interface Controlfield {
+  "#text": string;
+  "@tag": string;
+}
+
+export interface Datafield {
+  "@ind1": string;
+  "@ind2": string;
+  "@tag": string;
+  subfield: Subfield | Subfield[];
 }
 
 export interface Subfield {

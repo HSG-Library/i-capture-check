@@ -1,4 +1,4 @@
-import { BibResponse } from "./Types.ts";
+import { BibResponse } from "./types.ts";
 
 export class BibDataProvider {
   private readonly apiUrl =
