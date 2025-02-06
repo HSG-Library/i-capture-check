@@ -1,4 +1,4 @@
-name: 'Deno: format, lint and test'
+name: "Deno: format, lint and test"
 
 on:
   push:
