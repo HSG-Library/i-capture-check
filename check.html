@@ -140,8 +140,8 @@
           const url = this.url + shelfMark;
           const response = await fetch(url);
           try {
-          const json = await response.json();
-          this.print(json);
+            const json = await response.json();
+            this.print(json);
           } catch (error) {
             this.printMsg({ success: false });
           }
@@ -162,7 +162,8 @@
 
           if (json.duplicateInformation) {
             message +=
-              `<p class="has-toc"> ✅ Inhaltsverzeichnis vorhanden: <br> ${this.wrapUrlsWithAnchorTags(json.duplicateInformation)
+              `<p class="has-toc"> ✅ Inhaltsverzeichnis vorhanden: <br> ${
+                this.wrapUrlsWithAnchorTags(json.duplicateInformation)
               }</p>`;
           } else {
             message +=
