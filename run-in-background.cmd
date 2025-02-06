@@ -1,0 +1,1 @@
+START /MIN "i-capture-check" run.cmd &
