@@ -67,6 +67,8 @@ Resultat:
 
 ## Beispiele
 
-**Barcode:** http://localhost:3000/?shelf_mark=HM00673469 **MMSID aus IZ:**
-http://localhost:3000/?shelf_mark=9911105508105506 **MMSID aus NZ:**
-http://localhost:3000/?shelf_mark=991171868027605501
+**Barcode:** http://localhost:3000/?shelf_mark=HM00673469
+
+**MMSID aus IZ:** http://localhost:3000/?shelf_mark=9911105508105506
+
+**MMSID aus NZ:** http://localhost:3000/?shelf_mark=991171868027605501
