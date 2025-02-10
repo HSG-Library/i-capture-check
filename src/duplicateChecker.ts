@@ -20,7 +20,6 @@ export class DuplicateChecker {
     try {
       const bibData: BibData = await this.bibDataProvider
         .getBibData(identifier);
-      console.log(bibData);
       return this.collectData(
         bibData,
         identifier.startsWith("99") ? null : identifier,
@@ -76,7 +75,16 @@ export class DuplicateChecker {
       )
       .find((subfield) => subfield && subfield["@code"] === "a")?.["#text"] ??
       "";
-    return title;
+    const subtitle: string = this
+      .toArray<Subfield>(
+        this.toArray<Datafield>(marcData.record.datafield).find((field) =>
+          field["@tag"] === "245"
+        )
+          ?.subfield,
+      )
+      .find((subfield) => subfield && subfield["@code"] === "b")?.["#text"] ??
+      "";
+    return title.concat(" ", subtitle).trim();
   }
 
   private extractAuthors(marcData: MarcData): string[] {
