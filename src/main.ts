@@ -3,13 +3,13 @@ import { DuplicateChecker } from "./duplicateChecker.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
 if (import.meta.main) {
-  const apikey = await Deno.readTextFile("apikey").then((text) => text.trim());
+  //const apikey = await Deno.readTextFile("apikey").then((text) => text.trim());
 
-  if (!apikey) {
+  /*if (!apikey) {
     throw Error(
       "ERROR: no apikey present. Provide an Alma apikey as parameter.",
     );
-  }
+  }*/
 
   const app = new Application();
 
@@ -23,7 +23,7 @@ if (import.meta.main) {
       return;
     }
 
-    const bibDataProvider = new BibDataProvider(apikey);
+    const bibDataProvider = new BibDataProvider();
     const iCaptureCheck = new DuplicateChecker(bibDataProvider);
     const resultJson = await iCaptureCheck.check(shelfMark);
 
@@ -34,7 +34,8 @@ if (import.meta.main) {
     }
 
     ctx.response.headers.set("Content-Type", "application/xml");
-    ctx.response.body = iCaptureCheck.createXml(resultJson);
+    const sruResponse = await bibDataProvider.fetchResponse(shelfMark);
+    ctx.response.body = await sruResponse.text();
     return;
   });
 
