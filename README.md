@@ -56,15 +56,12 @@ Resultat:
 ## Anwendung
 
 1. Deno Runtime herunterladen und im Ordner `deno` ablegen
-2. Damit Anfragen an die Alma API gemacht werden können, muss eine Datei mit
-   Namen `apikey` mit einem gültigen API-Key als einzigen Ihnalt im Ordner
-   abgelegt werden.
 3. Der Server kann über die Datei `run-in-background.cmd` gestartet werden
 4. Anleitung für Konfiguration in iCapture:
    https://teamspace.unisg.ch/verw/bi/wiki/Seiten/iCapture%20technische%20Dokumentation.aspx
 5. Abfrage mit XML resultat: http://localhost:3000/?shelf_mark=[barcode]
 6. Abfrage via Interface http://localhost:3000
-7. Alternativ kann im SRU-Stil abgefragt werden:
+7. Alternativ kann im SRU-Stil abgefragt werden (wird für iCapture so benötigt):
 	http://localhost:3000/?version=1.2&operation=searchRetrieve&recordSchema=marcxml&query=shelf_mark=[barcode]
 
 ## Beispiele
