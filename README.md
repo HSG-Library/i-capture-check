@@ -64,10 +64,15 @@ Resultat:
    https://teamspace.unisg.ch/verw/bi/wiki/Seiten/iCapture%20technische%20Dokumentation.aspx
 5. Abfrage mit XML resultat: http://localhost:3000/?shelf_mark=[barcode]
 6. Abfrage via Interface http://localhost:3000
+7. Alternativ kann im SRU-Stil abgefragt werden:
+	http://localhost:3000/?version=1.2&operation=searchRetrieve&recordSchema=marcxml&query=shelf_mark=[barcode]
 
 ## Beispiele
 
 **Barcode:** http://localhost:3000/?shelf_mark=HM00673469
+
+**Barcode (SRU-Style):**
+http://localhost:3000/?version=1.2&operation=searchRetrieve&recordSchema=marcxml&query=shelf_mark=HM00673469
 
 **MMSID aus IZ:** http://localhost:3000/?shelf_mark=9911105508105506
 

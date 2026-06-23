@@ -6,7 +6,7 @@ import { BibData, ItemData, MarcData } from "../src/types.ts";
 import { stub } from "jsr:@std/testing/mock";
 
 Deno.test("One author, one isbn", async () => {
-  const bibDataProviderStub = new BibDataProvider("mock_apikey");
+  const bibDataProviderStub = new BibDataProvider();
 
   // Create a mock for BibDataProvider
   stub(
@@ -57,7 +57,7 @@ Deno.test("One author, one isbn", async () => {
 });
 
 Deno.test("Two authors, two isbns", async () => {
-  const bibDataProviderStub = new BibDataProvider("mock_apikey");
+  const bibDataProviderStub = new BibDataProvider();
 
   // Create a mock for BibDataProvider
   stub(
@@ -121,7 +121,7 @@ Deno.test("Two authors, two isbns", async () => {
 });
 
 Deno.test("No authors, no isbns", async () => {
-  const bibDataProviderStub = new BibDataProvider("mock_apikey");
+  const bibDataProviderStub = new BibDataProvider();
 
   // Create a mock for BibDataProvider
   stub(

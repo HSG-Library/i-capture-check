@@ -2,6 +2,19 @@ import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 import { DuplicateChecker } from "./duplicateChecker.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
+function parseShelfMarkFromSruQuery(query: string | null): string | null {
+  if (!query) {
+    return null;
+  }
+
+  const [field, ...valueParts] = query.split("=");
+  if (field !== "shelf_mark" || valueParts.length === 0) {
+    return null;
+  }
+
+  return valueParts.join("=").trim() || null;
+}
+
 if (import.meta.main) {
   //const apikey = await Deno.readTextFile("apikey").then((text) => text.trim());
 
@@ -14,7 +27,8 @@ if (import.meta.main) {
   const app = new Application();
 
   app.use(async (ctx: Context) => {
-    const shelfMark = ctx.request.url.searchParams.get("shelf_mark");
+    const shelfMark = ctx.request.url.searchParams.get("shelf_mark") ??
+      parseShelfMarkFromSruQuery(ctx.request.url.searchParams.get("query"));
     const format = ctx.request.url.searchParams.get("format") || "xml";
 
     if (!shelfMark) {
