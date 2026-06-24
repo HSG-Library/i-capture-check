@@ -1,57 +1,19 @@
 # iCapture Check
 
-Umsetzung der Dublettenprüfung für Inhaltsverzeichnisse vor dem Scan mit
+Umsetzung des Lookups und der Dublettenprüfung für Inhaltsverzeichnisse beim Scannen mit
 iCapture.
 
 ## Allgemeine Infos
 
-Einführung aus der Spezifikation:
+Für das Scannen von Inhaltsverzeichnissen mit der Software iCapture wird ein Lookup benötigt. Dieser Lookup holt sich anhand eines Identifiers die von iCaptre benötigten Daten des vorliegendes Buches aus Alma. In der Regel handelt es sich beim Identifier um den Strichcode des Exemplars. Eine Ausnahme davon bilden die Analytischen Aufnahmen. Dort wird die MMS-ID benötigt, damit das Inhaltsverzeichnis an den richtigen Titeldatensatz angehängt wird. 
+Zusätzlich zum Lookup wird eine Dublettenprüfung benötigt. Bevor Inhaltsverzeichnisse gescannt werden, muss geprüft werden, ob bereits eine andere Bibliothek in SLSP das Inhaltsverzeichnis gescannt hat. Dazu braucht es eine Abfrage, welche zurückmeldet, ob für den Titel in Alma bereits ein bestimmtes Feld mit den Begriffen "Inhaltsverzeichnis" oder "Table of contents" o.a. vorhanden ist. 
 
-> Bevor Inhaltsverzeichnisse gescannt werden, muss überprüft werden, ob bereits
-> eine andere Bibliothek in SLSP das Inhaltsverzeichnis gescannt hat. Dazu
-> braucht es eine Abfrage, welche zurückmeldet, ob für den Titel in Alma bereits
-> ein bestimmtes Feld mit den Begriffen "Inhaltsverzeichnis" oder "Table of
-> contents" o.ä. vorhanden ist. Als Eingabe wird in der Regel der
-> Exemplarstrichcode verwendet (mit Handscanner einlesen). In seltenen Fällen
-> kann jedoch nicht mit dem Exemplarstrichcode gearbeitet werden. Dann muss die
-> Systemnummer (MMS-ID) händisch eingetippt werden.
+Grundsätzlich bietet die iCapture als "out-of-the-Box"-Lösung für den Lookup die Möglichkeit eine SRU-Url zu hinterlegen. Dort kann jedoch nur entweder unsere IZ-URL oder die NZ-URL von SLSP hinterlegt werden. Um die Möglichkeit zu haben sowohl Strichcode, IZ-MMSID als auch NZ-MMSIS einzuscannen und ein Resultat zu erhalten, wird die vorliegende Applikation gebraucht.
 
-Siehe Spezifikation:
-https://gist.github.com/systemlibrarian/dd23ca796f3fae9fe58ebaa337ee4342
-
-URL Umsetzung IT:
-https://tools.unisg.ch/handlers/public/exporticapture.ashx?shelf_mark=[barcode]
-Beispiel:
-https://tools.unisg.ch/handlers/public/exporticapture.ashx?shelf_mark=HM00673466
-
-Resultat:
-
-```xml
-<cata>
-	<success>true</success>
-	<shelf_mark>HM00673469</shelf_mark>
-	<sys_nr>9911105508105506</sys_nr>
-	<title>Stasis der Bürgerkrieg als politisches Paradigma</title>
-	<author>Agamben, Giorgio</author>
-	<author>Hack, Michael</author>
-	<isbn>3100024524</isbn>
-	<isbn>9783100024527</isbn>
-	<language>ger</language>
-	<duplicateInformation>https://deposit.dnb.de/cgi-bin/dokserv?id=2bed5aca0e2c4042aad532c86bf364de&prov=M&dok_var=1&dok_ext=htm Inhaltstext Titelblatt und Inhaltsverzeichnis PDF https://urn.ub.unibe.ch/urn:ch:slsp:hsg:3100024524:ihv:pdf </duplicateInformation>
-</cata>
-```
-
-## Abweichungen in der Umsetzung
-
-- Autoren: die Autoren werden nicht wie beschrieben aus
-  `bib_data/author`bezogen, sonden aus den Marc Datenfeldern 100 und 700, es
-  werden alle Autoren ausgegeben
-- ISBN: die ISBN Nummmern werden nicht wie beschrieben aus `bib_data/isbn`
-  bezogen, sondern aus den Marc Datenfeldern 020, es werden alle ISBN Nummern
-  ausgegeben
-- Dublettenservice: die Felder `856$3` und `856$z` werden auf folgende Inhalte
-  geprüft:
+Die Applikation nimmt einen Identifier entgegen und prüft, ob es sich um einen Strichcode, eine IZ-MMSID oder eine NZ-MMSID handelt, ruft dir entsprechende SRU-Query auf und gibt das Resultat als SRU-Response im MARCXML Format zurück. Diese Response wird von iCapture weiterverarbeitet.
+Zusätzlich gibt es für die Dublettenprüfung ein minimales Frontend, das nach dem Einscannen des Identifiers anzeigt, ob bereits ein Inhaltsverzeichnis vorhanden ist. Dafür werden die Felder `856$3` und `856$z` werden auf folgende Inhalte geprüft:
   `"Inhaltsverzeichnis", "Table of contents", "Indice", "Table des matières", "Indice dei contenuti"`
+
 
 ## Anwendung
 

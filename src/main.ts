@@ -16,13 +16,6 @@ function parseShelfMarkFromSruQuery(query: string | null): string | null {
 }
 
 if (import.meta.main) {
-  //const apikey = await Deno.readTextFile("apikey").then((text) => text.trim());
-
-  /*if (!apikey) {
-    throw Error(
-      "ERROR: no apikey present. Provide an Alma apikey as parameter.",
-    );
-  }*/
 
   const app = new Application();
 
