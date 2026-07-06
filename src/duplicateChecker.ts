@@ -1,4 +1,4 @@
-import { stringify } from "https://deno.land/x/xml@6.0.4/mod.ts";
+import { stringify } from "xml";
 
 import { BibData, Datafield, ItemData, MarcData, Subfield } from "./types.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";

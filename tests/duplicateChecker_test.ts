@@ -1,9 +1,14 @@
-import { assertEquals } from "https://deno.land/std@0.203.0/assert/assert_equals.ts";
-import { parse } from "https://deno.land/x/xml@6.0.4/mod.ts";
+import { assertEquals } from "@std/assert";
+import { parse } from "xml";
 import { DuplicateChecker } from "../src/duplicateChecker.ts";
 import { BibDataProvider } from "../src/bibDataProvider.ts";
 import { BibData, ItemData, MarcData } from "../src/types.ts";
-import { stub } from "jsr:@std/testing/mock";
+import { stub } from "@std/testing/mock";
+
+Deno.test("containsTocText detects TOC labels", () => {
+  assertEquals(DuplicateChecker.containsTocText("Table of contents"), true);
+  assertEquals(DuplicateChecker.containsTocText("Open access link"), false);
+});
 
 Deno.test("One author, one isbn", async () => {
   const bibDataProviderStub = new BibDataProvider();
