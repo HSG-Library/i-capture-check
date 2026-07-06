@@ -1,44 +1,7 @@
 import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.48/deno-dom-wasm.ts";
 import { DuplicateChecker } from "./duplicateChecker.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
-
-function parseShelfMarkFromSruQuery(query: string | null): string | null {
-  if (!query) {
-    return null;
-  }
-
-  const [field, ...valueParts] = query.split("=");
-  if (field !== "shelf_mark" || valueParts.length === 0) {
-    return null;
-  }
-
-  return valueParts.join("=").trim() || null;
-}
-
-function normalizeTocTextForiCapture(sruResponseText: string): string {
-    sruResponseText = sruResponseText.replace(
-      /(<(?:\w+:)?datafield\b[^>]*\btag="856"[^>]*>)([\s\S]*?)(<\/(?:\w+:)?datafield>)/g,
-      (_match, openTag, innerContent, closeTag) => {
-        const updatedInnerContent = innerContent.replace(
-          /(<(?:\w+:)?subfield\b[^>]*\bcode="3"[^>]*>)([\s\S]*?)(<\/(?:\w+:)?subfield>)/g,
-          (
-            _subfieldMatch: string,
-            subfieldOpenTag: string,
-            subfieldText: string,
-            subfieldCloseTag: string,
-          ) => {
-            if (!DuplicateChecker.containsTocText(subfieldText)) {
-              return `${subfieldOpenTag}${subfieldText}${subfieldCloseTag}`;
-            }
-            return `${subfieldOpenTag}Inhaltsverzeichnis${subfieldCloseTag}`;
-          },
-        );
-        return `${openTag}${updatedInnerContent}${closeTag}`;
-      },
-    );
-    return sruResponseText;
-}
-
 
 if (import.meta.main) {
 
@@ -85,6 +48,40 @@ if (import.meta.main) {
   );
 
   await app.listen({ port: 3000 });
-
   
+}
+
+function parseShelfMarkFromSruQuery(query: string | null): string | null {
+  if (!query) {
+    return null;
+  }
+
+  const [field, ...valueParts] = query.split("=");
+  if (field !== "shelf_mark" || valueParts.length === 0) {
+    return null;
+  }
+
+  return valueParts.join("=").trim() || null;
+}
+
+function normalizeTocTextForiCapture(sruResponseText: string): string {
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(sruResponseText, "text/html");
+    const record = xmlDoc?.querySelector("record");
+    const marcFields856 = record?.querySelectorAll('datafield[tag="856"]');
+    if (marcFields856) {
+      for (const field of marcFields856) {
+        const subfield3 = field.querySelector('subfield[code="3"]');
+        const subfield3Text = subfield3?.textContent ?? "";
+        if (subfield3 && DuplicateChecker.containsTocText(subfield3Text)) {
+          subfield3.textContent = "Inhaltsverzeichnis";
+        }
+      }
+    }
+    return xmlDoc?.body?.innerHTML ?? sruResponseText;
+  } catch (error) {
+    console.error("Error normalizing TOC text:", error);
+    return sruResponseText;
+  }
 }
