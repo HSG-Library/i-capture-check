@@ -4,6 +4,7 @@ import { BibData, Datafield, ItemData, MarcData, Subfield } from "./types.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
 export class DuplicateChecker {
+
   public constructor(private bibDataProvider: BibDataProvider) {}
 
   public createXml(data: ItemData): string {
@@ -28,6 +29,20 @@ export class DuplicateChecker {
       console.log(error);
       return error as ItemData;
     }
+  }
+
+  public static containsTocText(value: string): boolean {
+    const tocList = [
+      "Inhaltsverzeichnis",
+      "Table of contents",
+      "Indice",
+      "Table des matières",
+      "Indice dei contenuti",
+    ]
+    const normalizedValue = value.toLowerCase();
+    return tocList.some((toc) =>
+      normalizedValue.includes(toc.toLowerCase())
+    );
   }
 
   private collectData(
@@ -141,23 +156,14 @@ export class DuplicateChecker {
     return c008.substring(35, 38);
   }
 
-  private extractDuplicateInfo(marcData: MarcData): string {
-    const tocList = [
-      "Inhaltsverzeichnis",
-      "Table of contents",
-      "Indice",
-      "Table des matières",
-      "Indice dei contenuti",
-    ];
+ private extractDuplicateInfo(marcData: MarcData): string {
     const d856: string = this.toArray<Datafield>(marcData.record.datafield)
       .filter((field) => field && field["@tag"] === "856")
       .flatMap((field) => this.toArray<Subfield>(field.subfield))
       .map((subfield) => subfield["#text"] ?? "")
       .join(" ");
 
-    const hasToc856: boolean = tocList.some((toc) =>
-      d856.toLowerCase().includes(toc.toLowerCase())
-    );
+    const hasToc856: boolean = DuplicateChecker.containsTocText(d856);
 
     if (hasToc856) {
       return d856.trim();

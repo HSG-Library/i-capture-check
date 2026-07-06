@@ -15,6 +15,31 @@ function parseShelfMarkFromSruQuery(query: string | null): string | null {
   return valueParts.join("=").trim() || null;
 }
 
+function normalizeTocTextForiCapture(sruResponseText: string): string {
+    sruResponseText = sruResponseText.replace(
+      /(<(?:\w+:)?datafield\b[^>]*\btag="856"[^>]*>)([\s\S]*?)(<\/(?:\w+:)?datafield>)/g,
+      (_match, openTag, innerContent, closeTag) => {
+        const updatedInnerContent = innerContent.replace(
+          /(<(?:\w+:)?subfield\b[^>]*\bcode="3"[^>]*>)([\s\S]*?)(<\/(?:\w+:)?subfield>)/g,
+          (
+            _subfieldMatch: string,
+            subfieldOpenTag: string,
+            subfieldText: string,
+            subfieldCloseTag: string,
+          ) => {
+            if (!DuplicateChecker.containsTocText(subfieldText)) {
+              return `${subfieldOpenTag}${subfieldText}${subfieldCloseTag}`;
+            }
+            return `${subfieldOpenTag}Inhaltsverzeichnis${subfieldCloseTag}`;
+          },
+        );
+        return `${openTag}${updatedInnerContent}${closeTag}`;
+      },
+    );
+    return sruResponseText;
+}
+
+
 if (import.meta.main) {
 
   const app = new Application();
@@ -42,7 +67,11 @@ if (import.meta.main) {
 
     ctx.response.headers.set("Content-Type", "application/xml");
     const sruResponse = await bibDataProvider.fetchResponse(shelfMark);
-    ctx.response.body = await sruResponse.text();
+    let sruResponseText = await sruResponse.text();
+    if (resultJson.duplicateInformation) {
+      sruResponseText = normalizeTocTextForiCapture(sruResponseText);
+    }
+    ctx.response.body = sruResponseText;
     return;
   });
 
@@ -56,4 +85,6 @@ if (import.meta.main) {
   );
 
   await app.listen({ port: 3000 });
+
+  
 }
