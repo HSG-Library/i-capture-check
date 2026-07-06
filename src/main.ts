@@ -72,10 +72,16 @@ function normalizeTocTextForiCapture(sruResponseText: string): string {
     const marcFields856 = record?.querySelectorAll('datafield[tag="856"]');
     if (marcFields856) {
       for (const field of marcFields856) {
-        const subfield3 = field.querySelector('subfield[code="3"]');
-        const subfield3Text = subfield3?.textContent ?? "";
-        if (subfield3 && DuplicateChecker.containsTocText(subfield3Text)) {
-          subfield3.textContent = "Inhaltsverzeichnis";
+        const subfields = field.querySelectorAll("subfield");
+        const hasTocText = Array.from(subfields).some((subfield) =>
+          DuplicateChecker.containsTocText(subfield.textContent ?? "")
+        );
+
+        if (hasTocText) {
+          const subfield3 = field.querySelector('subfield[code="3"]');
+          if (subfield3) {
+            subfield3.textContent = "Inhaltsverzeichnis";
+          }
         }
       }
     }
