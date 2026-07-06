@@ -4,7 +4,6 @@ import { BibData, Datafield, ItemData, MarcData, Subfield } from "./types.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
 export class DuplicateChecker {
-
   public constructor(private bibDataProvider: BibDataProvider) {}
 
   public createXml(data: ItemData): string {
@@ -38,11 +37,9 @@ export class DuplicateChecker {
       "Indice",
       "Table des matières",
       "Indice dei contenuti",
-    ]
+    ];
     const normalizedValue = value.toLowerCase();
-    return tocList.some((toc) =>
-      normalizedValue.includes(toc.toLowerCase())
-    );
+    return tocList.some((toc) => normalizedValue.includes(toc.toLowerCase()));
   }
 
   private collectData(
@@ -156,7 +153,7 @@ export class DuplicateChecker {
     return c008.substring(35, 38);
   }
 
- private extractDuplicateInfo(marcData: MarcData): string {
+  private extractDuplicateInfo(marcData: MarcData): string {
     const d856: string = this.toArray<Datafield>(marcData.record.datafield)
       .filter((field) => field && field["@tag"] === "856")
       .flatMap((field) => this.toArray<Subfield>(field.subfield))

@@ -9,7 +9,6 @@ export class BibDataProvider {
   private readonly NZMmsidUrl =
     "https://slsp-network.alma.exlibrisgroup.com/view/sru/41SLSP_NETWORK?version=1.2&operation=searchRetrieve&query=mms_id=";
 
- 
   public async getBibData(identifier: string): Promise<BibData> {
     const response = await this.fetchResponse(identifier);
 
@@ -26,10 +25,10 @@ export class BibDataProvider {
   }
 
   public fetchResponse(identifier: string): Promise<Response> {
-  return this.isMmsId(identifier)
-    ? this.call(this.byMmsid, identifier)
-    : this.call(this.byBarcode, identifier);
-}
+    return this.isMmsId(identifier)
+      ? this.call(this.byMmsid, identifier)
+      : this.call(this.byBarcode, identifier);
+  }
 
   private call(
     by: (value: string) => Promise<Response>,
@@ -71,23 +70,23 @@ export class BibDataProvider {
   }
 
   private async convertToBibData(response: Response): Promise<BibData> {
-      const xml = await response.text();
-      const sruResponse: SRUResponse = parse(xml) as unknown as SRUResponse;
-      if (sruResponse?.searchRetrieveResponse?.diagnostics) {
-        return this.createError("SRU query error");
-      }
-      const sru = sruResponse?.searchRetrieveResponse;
-      if (sru?.numberOfRecords === "1") {
-        const record = sru?.records?.record
-          ?.recordData;
-        return {
-          mms_id: sru?.records?.record?.recordIdentifier,
-          marcData: record,
-          errorsExist: false,
-        };
-      }
-      return this.createError("Invalid SRU response");
-    } 
+    const xml = await response.text();
+    const sruResponse: SRUResponse = parse(xml) as unknown as SRUResponse;
+    if (sruResponse?.searchRetrieveResponse?.diagnostics) {
+      return this.createError("SRU query error");
+    }
+    const sru = sruResponse?.searchRetrieveResponse;
+    if (sru?.numberOfRecords === "1") {
+      const record = sru?.records?.record
+        ?.recordData;
+      return {
+        mms_id: sru?.records?.record?.recordIdentifier,
+        marcData: record,
+        errorsExist: false,
+      };
+    }
+    return this.createError("Invalid SRU response");
+  }
 
   private isMmsId(identifier: string) {
     return identifier.startsWith("99");

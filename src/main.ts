@@ -4,7 +4,6 @@ import { DuplicateChecker } from "./duplicateChecker.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
 if (import.meta.main) {
-
   const app = new Application();
 
   app.use(async (ctx: Context) => {
@@ -48,7 +47,6 @@ if (import.meta.main) {
   );
 
   await app.listen({ port: 3000 });
-  
 }
 
 function parseShelfMarkFromSruQuery(query: string | null): string | null {
