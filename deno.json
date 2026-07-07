@@ -3,6 +3,7 @@
     "dev": "deno run --watch main.ts"
   },
   "imports": {
+    "@libs/xml": "jsr:@libs/xml@^8.0.0",
     "@std/assert": "jsr:@std/assert@1",
     "@std/testing/mock": "jsr:@std/testing@1/mock",
     "xml": "https://deno.land/x/xml@6.0.4/mod.ts"

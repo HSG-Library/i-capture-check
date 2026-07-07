@@ -1,6 +1,7 @@
 import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.48/deno-dom-wasm.ts";
+import { parse, stringify } from "xml";
 import { DuplicateChecker } from "./duplicateChecker.ts";
+import { Datafield, SRUResponse, Subfield } from "./types.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
 if (import.meta.main) {
@@ -33,6 +34,7 @@ if (import.meta.main) {
     if (resultJson.duplicateInformation) {
       sruResponseText = normalizeTocTextForiCapture(sruResponseText);
     }
+
     ctx.response.body = sruResponseText;
     return;
   });
@@ -64,28 +66,45 @@ function parseShelfMarkFromSruQuery(query: string | null): string | null {
 
 function normalizeTocTextForiCapture(sruResponseText: string): string {
   try {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(sruResponseText, "text/html");
-    const record = xmlDoc?.querySelector("record");
-    const marcFields856 = record?.querySelectorAll('datafield[tag="856"]');
-    if (marcFields856) {
-      for (const field of marcFields856) {
-        const subfields = field.querySelectorAll("subfield");
-        const hasTocText = Array.from(subfields).some((subfield) =>
-          DuplicateChecker.containsTocText(subfield.textContent ?? "")
-        );
+    const parsed = parse(sruResponseText) as unknown as SRUResponse;
+    const sruResponse = structuredClone(parsed); // the object returend by parse is immutable, so we need to create a mutable copy of it to modify subfield 3
+    const datafields = toArray<Datafield>(
+      sruResponse.searchRetrieveResponse?.records?.record?.recordData?.record
+        ?.datafield,
+    );
 
-        if (hasTocText) {
-          const subfield3 = field.querySelector('subfield[code="3"]');
-          if (subfield3) {
-            subfield3.textContent = "Inhaltsverzeichnis";
-          }
-        }
+    for (const field of datafields) {
+      if (!field || field["@tag"] !== "856") {
+        continue;
+      }
+
+      const subfields = toArray<Subfield>(field.subfield);
+      const hasTocText = subfields.some((subfield) =>
+        DuplicateChecker.containsTocText(subfield?.["#text"] ?? "")
+      );
+
+      if (!hasTocText) {
+        continue;
+      }
+
+      const subfield3 = subfields.find((subfield) => subfield?.["@code"] === "3");
+      if (subfield3) {
+        subfield3["#text"] = "Inhaltsverzeichnis";
       }
     }
-    return xmlDoc?.body?.innerHTML ?? sruResponseText;
+    return stringify(sruResponse as unknown as Record<string, unknown>);
   } catch (error) {
     console.error("Error normalizing TOC text:", error);
     return sruResponseText;
   }
+}
+
+function toArray<T>(item: T | T[] | undefined): T[] {
+  if (!item) {
+    return [];
+  }
+  if (Array.isArray(item)) {
+    return item;
+  }
+  return [item];
 }
