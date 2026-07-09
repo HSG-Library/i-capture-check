@@ -1,5 +1,5 @@
 import { BibData, SRUResponse } from "./types.ts";
-import { parse } from "https://deno.land/x/xml@6.0.4/mod.ts";
+import { parse } from "xml";
 
 export class BibDataProvider {
   private readonly barcodeUrl =
