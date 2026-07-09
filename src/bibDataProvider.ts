@@ -1,4 +1,4 @@
-import { BibData, MarcData, SRUResponse } from "./types.ts";
+import { BibData, SRUResponse } from "./types.ts";
 import { parse } from "https://deno.land/x/xml@6.0.4/mod.ts";
 
 export class BibDataProvider {
@@ -24,7 +24,7 @@ export class BibDataProvider {
     return Promise.resolve(bibData);
   }
 
-  public fetchResponse(identifier: string): Promise<Response> {
+  private fetchResponse(identifier: string): Promise<Response> {
     return this.isMmsId(identifier)
       ? this.call(this.byMmsid, identifier)
       : this.call(this.byBarcode, identifier);
@@ -37,7 +37,7 @@ export class BibDataProvider {
     return by.bind(this)(value);
   }
 
-  private async byBarcode(barcode: string): Promise<Response> {
+  private byBarcode(barcode: string): Promise<Response> {
     const url = this.barcodeUrl + barcode;
     console.info("calling (Barcode-SRU):", url);
     const response: Promise<Response> = fetch(url);

@@ -22,16 +22,25 @@ Grundsätzlich bietet iCapture als "out-of-the-Box"-Lösung für den Lookup die
 Möglichkeit eine SRU-Url zu hinterlegen. Dort kann jedoch nur entweder unsere
 IZ-URL oder die NZ-URL von SLSP hinterlegt werden. Um die Möglichkeit zu haben,
 sowohl Strichcode, IZ-MMSID als auch NZ-MMSID einzuscannen und ein Resultat zu
-erhalten, wird die vorliegende Applikation gebraucht.
+erhalten, wird die vorliegende Applikation gebraucht. Bezüglich Dublettenprüfung
+zeigt iCapture bereits im Katalogisat vorhandene Inhaltsverzeichnis-Links an,
+wen im MARC-Feld `856$3` "Inhaltsverzeichnis" steht. In unserem Katalog steht
+aber teilweise auch "Titelblatt und Inhaltsverzeichnis" oder "Table of
+Contents", "Table des matières" etc. In diesen Fällen wir das Inhaltsverzeichnis
+von iCapture leider nicht erkennt.
 
-Die Applikation nimmt einen Identifier entgegen und prüft, ob es sich um einen
-Strichcode, eine IZ-MMSID oder eine NZ-MMSID handelt, ruft die entsprechende
-SRU-Query auf und gibt das Resultat als SRU-Response im MARCXML Format zurück.
-Diese Response wird von iCapture weiterverarbeitet. Zusätzlich gibt es für die
-Dublettenprüfung ein minimales Frontend, das nach dem Einscannen des Identifiers
-anzeigt, ob bereits ein Inhaltsverzeichnis vorhanden ist. Dafür werden die
-Felder `856$3` und `856$z` werden auf folgende Inhalte geprüft:
+Die vorliegende Applikation nimmt einen Identifier entgegen und prüft, ob es
+sich um einen Strichcode, eine IZ-MMSID oder eine NZ-MMSID handelt und ruft die
+entsprechende SRU-Query auf. Anschliessend werden rden die Felder `856$3` und
+`856$z` werden auf die Inhalte
 `"Inhaltsverzeichnis", "Table of contents", "Indice", "Table des matières", "Indice dei contenuti"`
+geprüft. Falls solche Inhalte vorhanden sind, wird das XML-Resulatat so
+manipuliert, damit im Feld `856$3` exakt "Inhaltsverzeichnis" steht. Danach wird
+das Resultat als SRU-Response im MARCXML Format zurückgegeben. Diese Response
+wird von iCapture weiterverarbeitet. Als Backup-Option für die
+Dublettenkontrolle direkt in iCapture gibt es zusätzlich ein minimales Frontend,
+das nach dem Einscannen des Identifiers anzeigt, ob bereits ein
+Inhaltsverzeichnis vorhanden ist.
 
 ## Anwendung
 

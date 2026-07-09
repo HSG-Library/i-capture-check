@@ -37,17 +37,6 @@ export interface Subfield {
   "@code": string;
 }
 
-export interface ItemData {
-  success: boolean;
-  shelf_mark: string | null;
-  sys_nr?: string;
-  isbn?: string[];
-  author?: string[];
-  title?: string;
-  language?: string;
-  duplicateInformation?: string;
-}
-
 export interface SRUResponse {
   searchRetrieveResponse: {
     numberOfRecords: string;
