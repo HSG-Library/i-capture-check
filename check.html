@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-  <title>iCapture Check</title>
-  <style type="text/css">
+  <head>
+    <title>iCapture Check</title>
+    <style type="text/css">
     html,
     body {
       height: 100vh;
@@ -82,27 +81,27 @@
       list-style-type: "- ";
       padding: 15px;
     }
-  </style>
-</head>
+    </style>
+  </head>
 
-<body>
-  <main>
-    <div class="container">
-      <div class="input">
-        <input id="id-input" placeholder="HM000000" autofocus />
-        <button id="submit-button" type="button">⚡</button>
+  <body>
+    <main>
+      <div class="container">
+        <div class="input">
+          <input id="id-input" placeholder="HM000000" autofocus />
+          <button id="submit-button" type="button">⚡</button>
+        </div>
+        <div class="output">
+          <p id="output-msg"></p>
+          <details>
+            <summary>Response</summary>
+            <pre id="output-data">---</pre>
+          </details>
+        </div>
       </div>
-      <div class="output">
-        <p id="output-msg"></p>
-        <details>
-          <summary>Response</summary>
-          <pre id="output-data">---</pre>
-        </details>
-      </div>
-    </div>
-  </main>
+    </main>
 
-  <script>
+    <script>
     document.addEventListener("DOMContentLoaded", function () {
       check.init();
     });
@@ -162,9 +161,9 @@
         let message = "";
 
         if (json.tocInfo) {
-          message +=
-            `<p class="has-toc"> ✅ Inhaltsverzeichnis vorhanden: <br> ${this.wrapUrlsWithAnchorTags(json.tocInfo)
-            }</p>`;
+          message += `<p class="has-toc"> ✅ Inhaltsverzeichnis vorhanden: <br> ${
+            this.wrapUrlsWithAnchorTags(json.tocInfo)
+          }</p>`;
         } else {
           message +=
             `<p class="has-toc"> ❌ Noch kein Inhaltsverzeichnis vorhanden.</p>`;
@@ -181,11 +180,10 @@
         const urlPattern = /(\bhttps?:\/\/[^\s]+)/g;
         return text.replace(
           urlPattern,
-          '<a href="$1" target="_blank">$1</a>'
+          '<a href="$1" target="_blank">$1</a>',
         );
       },
     };
-  </script>
-</body>
-
+    </script>
+  </body>
 </html>
