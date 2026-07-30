@@ -116,12 +116,14 @@ Deno.test("check supports parsed XML shape with single datafield/subfield object
   assertEquals(datafield.subfield["#text"], "Inhaltsverzeichnis");
 });
 
-Deno.test("check returns an Error object when provider result has no marcData", async () => {
+Deno.test("check returns an empty result when provider result has no marcData", async () => {
   const checker = new DuplicateChecker(createProvider({ errorsExist: false }));
-  const result = await checker.check("HM00673469") as unknown;
 
-  assert(result instanceof Error);
-  assertEquals((result as Error).message, "No MarcData available");
+  const result = await checker.check("HM00673469");
+
+  assertEquals(result[0], "");
+  assertEquals(result[1], { errorsExist: false });
+
 });
 
 Deno.test("createSruXml wraps marcData in expected SRU response structure", () => {
@@ -159,4 +161,19 @@ Deno.test("createSruXml wraps marcData in expected SRU response structure", () =
     parsed.searchRetrieveResponse.records.record.recordData.record.leader,
     "01462nam a2200445 c 4500",
   );
+});
+
+Deno.test("createSruXml returns numberOfRecords 0 when no marcData is present", () => {
+  const checker = new DuplicateChecker(createProvider({ errorsExist: false }));
+
+  const xml = checker.createSruXml({ errorsExist: false });
+  const parsed = parse(xml) as unknown as {
+    searchRetrieveResponse: {
+      numberOfRecords: string;
+      records?: unknown;
+    };
+  };
+
+  assertEquals(parsed.searchRetrieveResponse.numberOfRecords, "0");
+  assertEquals(parsed.searchRetrieveResponse.records, undefined);
 });

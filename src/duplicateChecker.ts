@@ -7,39 +7,45 @@ export class DuplicateChecker {
   public constructor(private bibDataProvider: BibDataProvider) {}
 
   public createSruXml(bibData: BibData): string {
+    const hasMarcData = Boolean(bibData.marcData);
+
     return stringify({
       "@version": "1.0",
       "@standalone": "yes",
       searchRetrieveResponse: {
         "@xmlns": "http://www.loc.gov/zing/srw/",
         version: "1.2",
-        numberOfRecords: "1",
-        records: {
-          record: {
-            recordSchema: "marcxml",
-            recordPacking: "xml",
-            recordData: {
-              ...bibData.marcData,
+        numberOfRecords: hasMarcData ? "1" : "0",
+        ...(hasMarcData
+          ? {
+            records: {
+              record: {
+                recordSchema: "marcxml",
+                recordPacking: "xml",
+                recordData: {
+                  ...bibData.marcData,
+                },
+              },
             },
-          },
-        },
+          }
+          : {})
       },
     });
   }
 
   public async check(identifier: string): Promise<[string, BibData]> {
-    try {
-      const bibData: BibData = await this.bibDataProvider
-        .getBibData(identifier);
-      if (!bibData?.marcData) {
+    const bibData: BibData = await this.bibDataProvider
+      .getBibData(identifier);
+    if (!bibData?.marcData) {
+      if (bibData?.errorsExist) {
         throw Error("No MarcData available");
       }
-      const [tocInfo, modifiedBibData] = this.extractDuplicateInfo(bibData);
-      return [tocInfo, modifiedBibData];
-    } catch (error) {
-      console.log(error);
-      return error as [string, BibData];
+      console.log(bibData);
+      return ["", bibData];      
     }
+
+    const [tocInfo, modifiedBibData] = this.extractDuplicateInfo(bibData);
+    return [tocInfo, modifiedBibData];
   }
 
   private extractDuplicateInfo(bibData: BibData): [string, BibData] {

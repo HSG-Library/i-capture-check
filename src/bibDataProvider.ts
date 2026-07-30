@@ -13,10 +13,11 @@ export class BibDataProvider {
     const response = await this.fetchResponse(identifier);
 
     if (!response) {
-      return Promise.reject(this.createError("Invalid barcode or no response"));
+      return Promise.reject(this.createError("No response"));
     }
 
     const bibData: BibData = await this.convertToBibData(response);
+    console.log("bibData:", bibData);
 
     if (this.checkForErrors(bibData)) {
       return Promise.reject(bibData);
@@ -76,6 +77,11 @@ export class BibDataProvider {
       return this.createError("SRU query error");
     }
     const sru = sruResponse?.searchRetrieveResponse;
+    if (sru?.numberOfRecords === "0") {
+      return {
+        errorsExist: false,
+      };
+    }
     if (sru?.numberOfRecords === "1") {
       const record = sru?.records?.record
         ?.recordData;

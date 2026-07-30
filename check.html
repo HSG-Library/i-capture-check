@@ -165,7 +165,10 @@
           message +=
             `<p class="has-toc"> ✅ Inhaltsverzeichnis vorhanden: <br> ${this.wrapUrlsWithAnchorTags(json.tocInfo)
             }</p>`;
-        } else {
+        } else if (!json.bibData?.marcData) {
+          message += `<p class="has-toc"> Identifier unbekannt, Strichcode oder Barcode falsch?</p>`;
+        }
+        else {
           message +=
             `<p class="has-toc"> ❌ Noch kein Inhaltsverzeichnis vorhanden.</p>`;
         }

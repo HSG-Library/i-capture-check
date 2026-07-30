@@ -1,6 +1,7 @@
 import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 import { DuplicateChecker } from "./duplicateChecker.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
+import { BibData } from "./types.ts";
 
 if (import.meta.main) {
   const app = new Application();
@@ -18,20 +19,49 @@ if (import.meta.main) {
 
     const bibDataProvider = new BibDataProvider();
     const iCaptureCheck = new DuplicateChecker(bibDataProvider);
-    const [tocInfo, resultJson] = await iCaptureCheck.check(shelfMark);
 
-    if (format === "json") {
-      ctx.response.headers.set("Content-Type", "application/json");
-      ctx.response.body = {
-        ...resultJson,
-        tocInfo,
-      };
+    try {
+      const [tocInfo, resultJson] = await iCaptureCheck.check(shelfMark);
+
+      if (format === "json") {
+        ctx.response.headers.set("Content-Type", "application/json");
+        ctx.response.body = {
+          ...resultJson,
+          tocInfo,
+        };
+        return;
+      }
+
+      ctx.response.headers.set("Content-Type", "application/xml");
+      ctx.response.body = iCaptureCheck.createSruXml(resultJson);
+      return;
+    } catch (error) {
+      console.error("Lookup failed:", error);
+
+      if (format === "json") {
+        const fallback: BibData = {
+          errorsExist: true,
+          errorList: {
+            error: [{
+              errorMessage: error instanceof Error
+                ? error.message
+                : "Lookup failed",
+            }],
+          },
+        };
+        ctx.response.headers.set("Content-Type", "application/json");
+        ctx.response.body = {
+          ...fallback,
+          tocInfo: "",
+        };
+        return;
+      }
+
+      // Keep SRU clients on a valid SRU response even when upstream lookup fails.
+      ctx.response.headers.set("Content-Type", "application/xml");
+      ctx.response.body = iCaptureCheck.createSruXml({ errorsExist: false });
       return;
     }
-
-    ctx.response.headers.set("Content-Type", "application/xml");
-    ctx.response.body = iCaptureCheck.createSruXml(resultJson);
-    return;
   });
 
   app.addEventListener(
