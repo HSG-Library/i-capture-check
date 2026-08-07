@@ -31,8 +31,8 @@ von iCapture leider nicht erkennt.
 
 Die vorliegende Applikation nimmt einen Identifier entgegen und prüft, ob es
 sich um einen Strichcode, eine IZ-MMSID oder eine NZ-MMSID handelt und ruft die
-entsprechende SRU-Query auf. Anschliessend werden die Felder `856$3` und
-`856$z` werden auf die Inhalte
+entsprechende SRU-Query auf. Anschliessend werden die Felder `856$3` und `856$z`
+werden auf die Inhalte
 `"Inhaltsverzeichnis", "Table of contents", "Indice", "Table des matières", "Indice dei contenuti"`
 geprüft. Falls solche Inhalte vorhanden sind, wird das XML-Resulatat so
 manipuliert, damit im Feld `856$3` exakt "Inhaltsverzeichnis" steht. Danach wird
