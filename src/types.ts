@@ -1,6 +1,7 @@
 export interface BibData {
   mms_id?: string;
   marcData?: MarcData;
+  extraResponseData?: extraResponseData;
   errorsExist?: boolean;
   errorList?: {
     error?: [
@@ -10,6 +11,12 @@ export interface BibData {
       },
     ];
   };
+}
+
+export interface extraResponseData {
+  "@xmlns:xb": string;
+  "xb:exact": string;
+  "xb:responseDate": string;
 }
 
 export interface MarcData {
@@ -37,21 +44,11 @@ export interface Subfield {
   "@code": string;
 }
 
-export interface ItemData {
-  success: boolean;
-  shelf_mark: string | null;
-  sys_nr?: string;
-  isbn?: string[];
-  author?: string[];
-  title?: string;
-  language?: string;
-  duplicateInformation?: string;
-}
-
 export interface SRUResponse {
   searchRetrieveResponse: {
     numberOfRecords: string;
     diagnostics?: unknown;
+    extraResponseData?: extraResponseData;
     records?: {
       record?: {
         recordIdentifier?: string;

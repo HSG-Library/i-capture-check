@@ -2,6 +2,7 @@ apikey
 
 # Binaries
 bin/
+deno.exe
 
 # Logs
 logs
