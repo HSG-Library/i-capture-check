@@ -71,7 +71,8 @@ if (import.meta.main) {
 
 function getErrorMessage(error: unknown): string {
   if (isBibDataError(error)) {
-    return error.errorList?.error?.[0]?.errorMessage ?? "Unknown error occurred";
+    return error.errorList?.error?.[0]?.errorMessage ??
+      "Unknown error occurred";
   }
   if (error instanceof Error) {
     return error.message;

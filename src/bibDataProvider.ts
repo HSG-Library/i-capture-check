@@ -16,7 +16,7 @@ export class BibDataProvider {
     const response = await this.fetchResponse(identifier);
 
     if (!response) {
-       return Promise.reject(this.createError("No response"));
+      return Promise.reject(this.createError("No response"));
     }
 
     const bibData: BibData = await this.convertToBibData(response);
@@ -111,5 +111,4 @@ export class BibDataProvider {
       },
     };
   }
-
 }

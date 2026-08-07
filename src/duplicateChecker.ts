@@ -35,7 +35,6 @@ export class DuplicateChecker {
 
     const [tocInfo, modifiedBibData] = this.extractDuplicateInfo(bibData);
     return [tocInfo, modifiedBibData];
-
   }
 
   private extractDuplicateInfo(bibData: BibData): [string, BibData] {
