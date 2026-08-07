@@ -1,4 +1,4 @@
-import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
+import { Application, Context } from "oak";
 import { DuplicateChecker } from "./duplicateChecker.ts";
 import {
   BibDataProvider,
