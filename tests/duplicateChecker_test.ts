@@ -3,6 +3,7 @@ import {
   assertEquals,
   assertNotStrictEquals,
   assertRejects,
+  fail,
 } from "@std/assert";
 import { stub } from "@std/testing/mock";
 import { parse } from "xml";
@@ -31,11 +32,17 @@ Deno.test("getBibData throws a not-found error when SRU returns zero records", a
 
   try {
     const provider = new BibDataProvider();
-    await assertRejects(
-      () => provider.getBibData("HM00673469"),
-      Error,
-      NO_RECORDS_ERROR_MESSAGE,
-    );
+    try {
+      await provider.getBibData("HM00673469");
+      fail("Expected getBibData to reject when SRU returns zero records");
+    } catch (error) {
+      assertEquals(error, {
+        errorsExist: true,
+        errorList: {
+          error: [{ errorMessage: NO_RECORDS_ERROR_MESSAGE }],
+        },
+      });
+    }
   } finally {
     fetchStub.restore();
   }
@@ -162,6 +169,11 @@ Deno.test("createSruXml wraps marcData in expected SRU response structure", () =
   const bibData: BibData = {
     mms_id: "9911105709505506",
     errorsExist: false,
+    extraResponseData: {
+      "@xmlns:xb": "http://www.exlibrisgroup.com/x-service/xb",
+      "xb:exact": "true",
+      "xb:responseDate": "2026-08-07T08:00:00Z",
+    },
     marcData: {
       record: {
         leader: "01462nam a2200445 c 4500",
@@ -175,6 +187,11 @@ Deno.test("createSruXml wraps marcData in expected SRU response structure", () =
   const parsed = parse(xml) as unknown as {
     searchRetrieveResponse: {
       numberOfRecords: string;
+      extraResponseData: {
+        "@xmlns:xb": string;
+        "xb:exact": string;
+        "xb:responseDate": string;
+      };
       records: {
         record: {
           recordData: {
@@ -192,4 +209,9 @@ Deno.test("createSruXml wraps marcData in expected SRU response structure", () =
     parsed.searchRetrieveResponse.records.record.recordData.record.leader,
     "01462nam a2200445 c 4500",
   );
+  assertEquals(parsed.searchRetrieveResponse.extraResponseData, {
+    "@xmlns:xb": "http://www.exlibrisgroup.com/x-service/xb",
+    "xb:exact": "true",
+    "xb:responseDate": "2026-08-07T08:00:00Z",
+  });
 });
