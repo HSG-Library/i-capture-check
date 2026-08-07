@@ -1,6 +1,9 @@
 import { Application, Context } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 import { DuplicateChecker } from "./duplicateChecker.ts";
-import { BibDataProvider } from "./bibDataProvider.ts";
+import {
+  BibDataProvider,
+  NO_RECORDS_ERROR_MESSAGE,
+} from "./bibDataProvider.ts";
 import { BibData } from "./types.ts";
 
 if (import.meta.main) {
@@ -22,6 +25,7 @@ if (import.meta.main) {
 
     try {
       const [tocInfo, resultJson] = await iCaptureCheck.check(shelfMark);
+      console.log("TocInfo:", tocInfo);
 
       if (format === "json") {
         ctx.response.headers.set("Content-Type", "application/json");
@@ -36,30 +40,19 @@ if (import.meta.main) {
       ctx.response.body = iCaptureCheck.createSruXml(resultJson);
       return;
     } catch (error) {
-      console.error("Lookup failed:", error);
+      const message = getErrorMessage(error);
+      const isNoRecordsError = message === NO_RECORDS_ERROR_MESSAGE;
+
+      ctx.response.status = isNoRecordsError ? 404 : 500;
 
       if (format === "json") {
-        const fallback: BibData = {
-          errorsExist: true,
-          errorList: {
-            error: [{
-              errorMessage: error instanceof Error
-                ? error.message
-                : "Lookup failed",
-            }],
-          },
-        };
         ctx.response.headers.set("Content-Type", "application/json");
-        ctx.response.body = {
-          ...fallback,
-          tocInfo: "",
-        };
+        ctx.response.body = { error: message };
         return;
       }
 
-      // Keep SRU clients on a valid SRU response even when upstream lookup fails.
-      ctx.response.headers.set("Content-Type", "application/xml");
-      ctx.response.body = iCaptureCheck.createSruXml({ errorsExist: false });
+      ctx.response.type = "text/plain";
+      ctx.response.body = message;
       return;
     }
   });
@@ -74,6 +67,20 @@ if (import.meta.main) {
   );
 
   await app.listen({ port: 3000 });
+}
+
+function getErrorMessage(error: unknown): string {
+  if (isBibDataError(error)) {
+    return error.errorList?.error?.[0]?.errorMessage ?? "Unknown error occurred";
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Unknown error occurred";
+}
+
+function isBibDataError(error: unknown): error is BibData {
+  return typeof error === "object" && error !== null && "errorsExist" in error;
 }
 
 function parseShelfMarkFromSruQuery(query: string | null): string | null {

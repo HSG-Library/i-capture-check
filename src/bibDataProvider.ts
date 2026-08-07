@@ -1,6 +1,9 @@
 import { BibData, SRUResponse } from "./types.ts";
 import { parse } from "xml";
 
+export const NO_RECORDS_ERROR_MESSAGE =
+  "No records found. Please check if Barcode or MMS ID is correct.";
+
 export class BibDataProvider {
   private readonly barcodeUrl =
     "https://slsp-hsg.alma.exlibrisgroup.com/view/sru/41SLSP_HSG?version=1.2&operation=searchRetrieve&query=alma.barcode=";
@@ -13,11 +16,10 @@ export class BibDataProvider {
     const response = await this.fetchResponse(identifier);
 
     if (!response) {
-      return Promise.reject(this.createError("No response"));
+       return Promise.reject(this.createError("No response"));
     }
 
     const bibData: BibData = await this.convertToBibData(response);
-    console.log("bibData:", bibData);
 
     if (this.checkForErrors(bibData)) {
       return Promise.reject(bibData);
@@ -66,28 +68,23 @@ export class BibDataProvider {
     return response;
   }
 
-  private checkForErrors(bibData: BibData): boolean {
-    return bibData?.errorsExist ?? false;
-  }
-
   private async convertToBibData(response: Response): Promise<BibData> {
     const xml = await response.text();
     const sruResponse: SRUResponse = parse(xml) as unknown as SRUResponse;
-    if (sruResponse?.searchRetrieveResponse?.diagnostics) {
-      return this.createError("SRU query error");
-    }
     const sru = sruResponse?.searchRetrieveResponse;
     if (sru?.numberOfRecords === "0") {
-      return {
-        errorsExist: false,
-      };
+      return this.createError(NO_RECORDS_ERROR_MESSAGE);
     }
     if (sru?.numberOfRecords === "1") {
       const record = sru?.records?.record
         ?.recordData;
+      if (!record) {
+        return this.createError("SRU query error");
+      }
       return {
         mms_id: sru?.records?.record?.recordIdentifier,
         marcData: record,
+        extraResponseData: sru?.extraResponseData,
         errorsExist: false,
       };
     }
@@ -102,6 +99,10 @@ export class BibDataProvider {
     return mmsId.endsWith("5506");
   }
 
+  private checkForErrors(bibData: BibData): boolean {
+    return bibData?.errorsExist ?? false;
+  }
+
   private createError(errorMsg: string): BibData {
     return {
       errorsExist: true,
@@ -110,4 +111,5 @@ export class BibDataProvider {
       },
     };
   }
+
 }

@@ -1,5 +1,4 @@
 import { stringify } from "xml";
-
 import { BibData, Datafield, Subfield } from "./types.ts";
 import { BibDataProvider } from "./bibDataProvider.ts";
 
@@ -7,28 +6,25 @@ export class DuplicateChecker {
   public constructor(private bibDataProvider: BibDataProvider) {}
 
   public createSruXml(bibData: BibData): string {
-    const hasMarcData = Boolean(bibData.marcData);
-
     return stringify({
       "@version": "1.0",
       "@standalone": "yes",
       searchRetrieveResponse: {
         "@xmlns": "http://www.loc.gov/zing/srw/",
         version: "1.2",
-        numberOfRecords: hasMarcData ? "1" : "0",
-        ...(hasMarcData
-          ? {
-            records: {
-              record: {
-                recordSchema: "marcxml",
-                recordPacking: "xml",
-                recordData: {
-                  ...bibData.marcData,
-                },
-              },
+        numberOfRecords: 1,
+        records: {
+          record: {
+            recordSchema: "marcxml",
+            recordPacking: "xml",
+            recordData: {
+              ...bibData.marcData,
             },
-          }
-          : {})
+            recordIdentifier: bibData.mms_id,
+            recordPosition: 1,
+          },
+        },
+        extraResponseData: bibData.extraResponseData,
       },
     });
   }
@@ -36,16 +32,10 @@ export class DuplicateChecker {
   public async check(identifier: string): Promise<[string, BibData]> {
     const bibData: BibData = await this.bibDataProvider
       .getBibData(identifier);
-    if (!bibData?.marcData) {
-      if (bibData?.errorsExist) {
-        throw Error("No MarcData available");
-      }
-      console.log(bibData);
-      return ["", bibData];      
-    }
 
     const [tocInfo, modifiedBibData] = this.extractDuplicateInfo(bibData);
     return [tocInfo, modifiedBibData];
+
   }
 
   private extractDuplicateInfo(bibData: BibData): [string, BibData] {

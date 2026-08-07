@@ -1,6 +1,15 @@
-import { assert, assertEquals, assertNotStrictEquals } from "@std/assert";
+import {
+  assert,
+  assertEquals,
+  assertNotStrictEquals,
+  assertRejects,
+} from "@std/assert";
+import { stub } from "@std/testing/mock";
 import { parse } from "xml";
-import { BibDataProvider } from "../src/bibDataProvider.ts";
+import {
+  BibDataProvider,
+  NO_RECORDS_ERROR_MESSAGE,
+} from "../src/bibDataProvider.ts";
 import { DuplicateChecker } from "../src/duplicateChecker.ts";
 import { BibData } from "../src/types.ts";
 
@@ -9,6 +18,28 @@ function createProvider(result: BibData | Promise<BibData>): BibDataProvider {
     getBibData: () => Promise.resolve(result),
   } as unknown as BibDataProvider;
 }
+
+Deno.test("getBibData throws a not-found error when SRU returns zero records", async () => {
+  const response = new Response(
+    `<?xml version="1.0" encoding="UTF-8"?>
+     <searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
+       <numberOfRecords>0</numberOfRecords>
+     </searchRetrieveResponse>`,
+    { status: 200 },
+  );
+  const fetchStub = stub(globalThis, "fetch", () => Promise.resolve(response));
+
+  try {
+    const provider = new BibDataProvider();
+    await assertRejects(
+      () => provider.getBibData("HM00673469"),
+      Error,
+      NO_RECORDS_ERROR_MESSAGE,
+    );
+  } finally {
+    fetchStub.restore();
+  }
+});
 
 Deno.test("check returns empty tocInfo when no 856 TOC text exists", async () => {
   const bibData: BibData = {
@@ -119,10 +150,11 @@ Deno.test("check supports parsed XML shape with single datafield/subfield object
 Deno.test("check returns an empty result when provider result has no marcData", async () => {
   const checker = new DuplicateChecker(createProvider({ errorsExist: false }));
 
-  const result = await checker.check("HM00673469");
-
-  assertEquals(result[0], "");
-  assertEquals(result[1], { errorsExist: false });
+  await assertRejects(
+    () => checker.check("HM00673469"),
+    Error,
+    "No MarcData available",
+  );
 
 });
 
@@ -163,17 +195,3 @@ Deno.test("createSruXml wraps marcData in expected SRU response structure", () =
   );
 });
 
-Deno.test("createSruXml returns numberOfRecords 0 when no marcData is present", () => {
-  const checker = new DuplicateChecker(createProvider({ errorsExist: false }));
-
-  const xml = checker.createSruXml({ errorsExist: false });
-  const parsed = parse(xml) as unknown as {
-    searchRetrieveResponse: {
-      numberOfRecords: string;
-      records?: unknown;
-    };
-  };
-
-  assertEquals(parsed.searchRetrieveResponse.numberOfRecords, "0");
-  assertEquals(parsed.searchRetrieveResponse.records, undefined);
-});
